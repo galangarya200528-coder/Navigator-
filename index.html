@@ -4,199 +4,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigasi Suara AI - Pendamping Tunanetra</title>
+    <title>Asisten Gemini AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            touch-action: manipulation;
-            user-select: none;
-            overflow: hidden;
-            background-color: #0f172a;
-        }
-        .ripple {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.4);
-            border-radius: 50%;
-            transform: scale(0);
-            animation: ripple-animation 0.6s ease-out;
-            pointer-events: none;
-        }
-        @keyframes ripple-animation {
-            to {
-                transform: scale(4);
-                opacity: 0;
-            }
-        }
         .pulse-ring {
-            position: absolute;
-            border: 4px solid #ef4444;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .5; transform: scale(1.05); }
+        }
+        .listening {
+            background-color: #ef4444 !important;
+            box-shadow: 0 0 20px #ef4444;
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center h-screen text-white text-center p-6" onclick="handleScreenTap(event)">
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div id="ui-container" class="relative z-10 space-y-8">
-        <div id="status-orb" class="w-48 h-48 mx-auto bg-blue-600 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(37,99,235,0.5)] transition-all duration-500">
-            <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-20a3 3 0 00-3 3v8a3 3 0 006 0V5a3 3 0 00-3-3z" />
-            </svg>
-            <div id="pulse-element" class="hidden pulse-ring w-48 h-48"></div>
-        </div>
+    <!-- Container Utama -->
+    <div class="w-full max-w-md bg-slate-800 rounded-3xl p-8 shadow-2xl border border-slate-700 text-center">
         
-        <div>
-            <h1 id="status-text" class="text-4xl font-bold mb-4">Siap Membantu</h1>
-            <p id="instruction-text" class="text-blue-200 text-xl">Ketuk layar dan sebutkan tujuan Anda</p>
+        <h1 class="text-3xl font-bold mb-2">Asisten AI</h1>
+        <p id="status-text" class="text-blue-400 mb-8 h-6">Siap Membantu Anda</p>
+
+        <!-- Visualizer Bulat -->
+        <div class="relative flex justify-center mb-10">
+            <div id="visualizer" class="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center shadow-lg transition-all duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+            </div>
+            <!-- Pulse Effect -->
+            <div id="pulse" class="absolute inset-0 w-32 h-32 bg-blue-500 rounded-full opacity-20 mx-auto hidden pulse-ring"></div>
         </div>
 
-        <div id="loading-indicator" class="hidden flex justify-center space-x-2">
-            <div class="w-3 h-3 bg-white rounded-full animate-bounce"></div>
-            <div class="w-3 h-3 bg-white rounded-full animate-bounce [animation-delay:-.3s]"></div>
-            <div class="w-3 h-3 bg-white rounded-full animate-bounce [animation-delay:-.5s]"></div>
+        <p id="instruction" class="text-slate-400 text-sm mb-6">Ketuk tombol di bawah untuk mulai bicara</p>
+
+        <!-- Bagian Input API Key -->
+        <div class="mt-4 p-4 bg-slate-900 rounded-xl border border-slate-700">
+            <label class="block text-xs text-slate-500 mb-2 uppercase tracking-widest text-left">Konfigurasi</label>
+            <!-- MASUKKAN API KEY ANDA DI VALUE BAWAH INI ATAU KETIK DI LAYAR -->
+            <input type="password" id="api-key" 
+                   placeholder="Masukkan API Key Gemini Anda" 
+                   value=""
+                   class="w-full bg-slate-800 text-white p-3 rounded-lg border border-slate-600 focus:outline-none focus:border-blue-500 text-sm">
+            <p class="text-[10px] text-slate-500 mt-2 text-left">*API Key tersimpan aman di browser Anda.</p>
         </div>
+
+        <!-- Tombol Utama -->
+        <button id="mic-btn" class="mt-8 w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-500 active:scale-95 transition-all shadow-lg mx-auto">
+            <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+        </button>
+
     </div>
 
-    <!-- API Key Input (Hanya untuk keperluan setup) -->
-    <div class="fixed bottom-4 left-4 right-4 opacity-10 hover:opacity-100 transition-opacity">
-        <input type="password" id="AIzaSyCbu-WfmtdKmwiAB04H1EAPTzQcHWhhrZg" placeholder="AIzaSyCbu-WfmtdKmwiAB04H1EAPTzQcHWhhrZg" class="w-full p-2 bg-gray-800 rounded text-xs text-white border border-gray-700">
+    <!-- Output Teks Terakhir -->
+    <div id="chat-box" class="mt-6 w-full max-w-md px-4 text-center">
+        <p id="user-text" class="text-slate-500 italic text-sm mb-2"></p>
+        <p id="ai-text" class="text-slate-200 text-base leading-relaxed"></p>
     </div>
 
     <script>
-        const apiKeyInput = document.getElementById('api-key');
+        const micBtn = document.getElementById('mic-btn');
         const statusText = document.getElementById('status-text');
-        const instructionText = document.getElementById('instruction-text');
-        const orb = document.getElementById('status-orb');
-        const pulse = document.getElementById('pulse-element');
-        const loader = document.getElementById('loading-indicator');
+        const visualizer = document.getElementById('visualizer');
+        const pulse = document.getElementById('pulse');
+        const instruction = document.getElementById('instruction');
+        const userOutput = document.getElementById('user-text');
+        const aiOutput = document.getElementById('ai-text');
+        const apiKeyInput = document.getElementById('api-key');
 
-        // Speech Synthesis Setup
-        const synth = window.speechSynthesis;
-        function speak(text) {
-            synth.cancel();
-            const utter = new SpeechSynthesisUtterance(text);
-            utter.lang = 'id-ID';
-            utter.rate = 1.0;
-            synth.speak(utter);
+        let isListening = false;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            statusText.innerText = "Browser tidak mendukung Speech Recognition";
         }
 
-        // Welcome Message
-        window.onload = () => {
-            setTimeout(() => {
-                speak("Asisten navigasi aktif. Ketuk layar satu kali lalu sebutkan ke mana Anda ingin pergi.");
-            }, 500);
-        };
-
-        // Speech Recognition Setup
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition;
-
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
+        const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+        if (recognition) {
             recognition.lang = 'id-ID';
-            
+            recognition.interimResults = false;
+
             recognition.onstart = () => {
+                isListening = true;
                 statusText.innerText = "Mendengarkan...";
-                instructionText.innerText = "Sebutkan tujuan sekarang";
-                orb.className = "w-48 h-48 mx-auto bg-red-600 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(220,38,38,0.5)] transition-all duration-300";
+                visualizer.classList.add('listening');
                 pulse.classList.remove('hidden');
             };
 
             recognition.onresult = async (event) => {
                 const transcript = event.results[0][0].transcript;
-                statusText.innerText = "Memproses...";
-                instructionText.innerText = `"${transcript}"`;
-                await callGeminiAI(transcript);
-            };
-
-            recognition.onerror = () => {
-                speak("Maaf, saya tidak mendengar. Ketuk lagi untuk mencoba.");
-                resetUI();
+                userOutput.innerText = `Anda: "${transcript}"`;
+                prosesKeGemini(transcript);
             };
 
             recognition.onend = () => {
-                resetUI();
+                isListening = false;
+                statusText.innerText = "Memproses...";
+                visualizer.classList.remove('listening');
+                pulse.classList.add('hidden');
             };
         }
 
-        function resetUI() {
-            orb.className = "w-48 h-48 mx-auto bg-blue-600 rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(37,99,235,0.5)] transition-all duration-300";
-            pulse.classList.add('hidden');
-            loader.classList.add('hidden');
-        }
-
-        function handleScreenTap(event) {
-            // Ripple effect
-            const ripple = document.createElement('div');
-            ripple.classList.add('ripple');
-            ripple.style.left = `${event.clientX}px`;
-            ripple.style.top = `${event.clientY}px`;
-            document.body.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 600);
-
-            if (recognition) {
-                try {
-                    recognition.start();
-                    const audio = new Audio('https://www.soundjay.com/buttons/sounds/button-3.mp3');
-                    audio.play().catch(() => {});
-                } catch(e) {
-                    // Recognition already started
+        micBtn.onclick = () => {
+            if (isListening) {
+                recognition.stop();
+            } else {
+                // Ambil API Key saat tombol ditekan untuk memastikan data terbaru
+                const key = apiKeyInput.value.trim();
+                if (!key) {
+                    aiOutput.innerText = "Mohon masukkan kunci api di bagian bawah layar terlebih dahulu!";
+                    aiOutput.classList.add('text-red-400');
+                    return;
                 }
+                aiOutput.classList.remove('text-red-400');
+                recognition.start();
             }
-        }
+        };
 
-        // Gemini API Call with Exponential Backoff
-        async function callGeminiAI(userQuery, retryCount = 0) {
+        async function prosesKeGemini(prompt) {
             const apiKey = apiKeyInput.value.trim();
-            if (!apiKey) {
-                speak("Mohon masukkan kunci API di bagian bawah layar terlebih dahulu.");
-                return;
-            }
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
-            loader.classList.remove('hidden');
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            
-            const systemPrompt = "Anda adalah asisten navigasi suara untuk tunanetra. User akan menyebutkan tujuan. Berikan instruksi navigasi singkat, jelas, dan berurutan (step-by-step) untuk sampai ke sana dari lokasi saat ini secara hipotetis. Gunakan bahasa Indonesia yang ramah. Fokus pada arah kiri, kanan, dan jarak meter.";
-            
             const payload = {
-                contents: [{ parts: [{ text: `Tujuan saya: ${userQuery}` }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] }
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "Anda adalah asisten suara yang ramah dan singkat. Jawab dalam bahasa Indonesia yang natural." }] },
+                tools: [{ "google_search": {} }]
             };
 
             try {
-                const response = await fetch(endpoint, {
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
-                if (!response.ok) throw new Error('API Error');
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+
+                const responseText = data.candidates[0].content.parts[0].text;
+                aiOutput.innerText = responseText;
+                statusText.innerText = "Siap Membantu Anda";
+                
+                // Mulai TTS
+                bicara(responseText);
+
+            } catch (err) {
+                console.error(err);
+                aiOutput.innerText = "Error: " + err.message;
+                statusText.innerText = "Terjadi kesalahan";
+            }
+        }
+
+        async function bicara(teks) {
+            const apiKey = apiKeyInput.value.trim();
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: teks }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: "Kore" }
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
                 const data = await response.json();
-                const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Maaf, rute tidak ditemukan.";
-                
-                statusText.innerText = "Navigasi Aktif";
-                speak(aiResponse);
-
-            } catch (error) {
-                if (retryCount < 5) {
-                    const waitTime = Math.pow(2, retryCount) * 1000;
-                    setTimeout(() => callGeminiAI(userQuery, retryCount + 1), waitTime);
-                } else {
-                    speak("Maaf, terjadi gangguan koneksi. Silakan coba lagi nanti.");
-                    resetUI();
-                }
-            } finally {
-                loader.classList.add('hidden');
+                const base64Audio = data.candidates[0].content.parts[0].inlineData.data;
+                const audioBlob = base64ToBlob(base64Audio, 'audio/wav');
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                audio.play();
+            } catch (err) {
+                console.warn("Gagal menjalankan suara, tapi teks berhasil ditampilkan.");
             }
+        }
+
+        function base64ToBlob(base64, type) {
+            const binStr = atob(base64);
+            const len = binStr.length;
+            const arr = new Uint8Array(len);
+            for (let i = 0; i < len; i++) arr[i] = binStr.charCodeAt(i);
+            return new Blob([arr], { type: type });
         }
     </script>
 </body>
 </html>
 
 ```
-
