@@ -3,99 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Navigasi Suara Pintar</title>
+    <title>Navigasi Presisi Smart Cap</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            touch-action: manipulation;
-            user-select: none;
-            overflow: hidden;
-            background-color: #0f172a;
-        }
-        .ripple {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.4);
-            border-radius: 50%;
-            transform: scale(0);
-            animation: ripple-animation 0.6s ease-out;
-            pointer-events: none;
-        }
-        @keyframes ripple-animation {
-            to { transform: scale(4); opacity: 0; }
-        }
-        .active-pulse {
-            animation: pulse-bg 1.5s infinite;
-        }
+        body { touch-action: manipulation; user-select: none; overflow: hidden; background-color: #0f172a; }
+        .ripple { position: absolute; background: rgba(255, 255, 255, 0.4); border-radius: 50%; transform: scale(0); animation: ripple-animation 0.6s ease-out; pointer-events: none; }
+        @keyframes ripple-animation { to { transform: scale(4); opacity: 0; } }
+        .listening-pulse { animation: pulse-bg 1.5s infinite; }
         @keyframes pulse-bg {
-            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
-            70% { box-shadow: 0 0 0 30px rgba(220, 38, 38, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 40px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center h-screen text-white text-center p-6" onclick="handleScreenTap(event)">
 
-    <div class="relative z-10 space-y-10 w-full max-w-md">
-        <!-- Status Visual -->
-        <div id="status-orb" class="w-40 h-40 mx-auto bg-blue-600 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500">
-            <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" class="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-20a3 3 0 00-3 3v8a3 3 0 006 0V5a3 3 0 00-3-3z" />
+    <div class="relative z-10 space-y-12 w-full max-w-lg">
+        <div id="status-orb" class="w-56 h-56 mx-auto bg-blue-600 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
         </div>
         
-        <div>
-            <h1 id="status-text" class="text-3xl font-bold mb-2">Ketuk Untuk Bicara</h1>
-            <p id="sub-text" class="text-blue-300 text-lg">Asisten siap membantu rute Anda</p>
+        <div class="space-y-4">
+            <h1 id="status-text" class="text-4xl font-bold tracking-tight">Mencari GPS...</h1>
+            <p id="sub-text" class="text-blue-200 text-xl font-medium italic">Ketuk layar untuk memulai</p>
         </div>
 
-        <!-- Loading Dots -->
-        <div id="loader" class="hidden flex justify-center space-x-3">
-            <div class="w-4 h-4 bg-white rounded-full animate-bounce"></div>
-            <div class="w-4 h-4 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-            <div class="w-4 h-4 bg-white rounded-full animate-bounce [animation-delay:-0.5s]"></div>
-        </div>
-
-        <!-- Konfigurasi API Key (Akan tersimpan otomatis) -->
-        <div class="mt-8 p-4 bg-slate-800 rounded-xl border border-slate-700 text-left" onclick="event.stopPropagation()">
-            <label class="text-xs text-slate-400 block mb-1">API KEY GOOGLE AI STUDIO:</label>
-            <input type="password" id="api-key" placeholder="Tempel API Key di sini" 
-                   class="w-full p-3 bg-slate-900 rounded-lg text-sm border border-slate-600 focus:border-blue-500 outline-none transition-colors"
-                   onchange="saveKey(this.value)">
-            <p class="text-[10px] text-slate-500 mt-2">*API Key disimpan di memori browser Anda.</p>
+        <div id="loader" class="hidden flex justify-center space-x-4">
+            <div class="w-5 h-5 bg-blue-400 rounded-full animate-bounce"></div>
+            <div class="w-5 h-5 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+            <div class="w-5 h-5 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.5s]"></div>
         </div>
     </div>
 
     <script>
+        const API_KEY = "AIzaSyBczkuknwIyntuzC7_7RAT9P6Gw1JG33OY";
         const statusText = document.getElementById('status-text');
         const subText = document.getElementById('sub-text');
         const orb = document.getElementById('status-orb');
         const loader = document.getElementById('loader');
-        const apiKeyInput = document.getElementById('api-key');
 
-        // Load saved API Key
+        let userCoords = null;
+
+        // Ambil Lokasi GPS saat web dibuka
         window.onload = () => {
-            const savedKey = localStorage.getItem('gemini_api_key');
-            if (savedKey) apiKeyInput.value = savedKey;
-            
-            setTimeout(() => {
-                speak("Aplikasi siap. Ketuk layar satu kali lalu sebutkan tujuan Anda.");
-            }, 800);
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    userCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                    statusText.innerText = "GPS Terkunci";
+                    speak("GPS terkunci. Sebutkan tujuan Anda dengan mengetuk layar.");
+                },
+                () => {
+                    statusText.innerText = "GPS Gagal";
+                    speak("Maaf, gagal mengakses lokasi. Pastikan GPS handphone Anda aktif.");
+                }
+            );
         };
 
-        function saveKey(val) {
-            localStorage.setItem('gemini_api_key', val.trim());
-        }
-
-        // Speech Synthesis (Bicara)
         function speak(text) {
             window.speechSynthesis.cancel();
             const utter = new SpeechSynthesisUtterance(text);
             utter.lang = 'id-ID';
-            utter.rate = 1.0;
             window.speechSynthesis.speak(utter);
         }
 
-        // Speech Recognition (Mendengar)
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
 
@@ -106,28 +80,20 @@
             recognition.onstart = () => {
                 statusText.innerText = "Mendengarkan...";
                 orb.classList.replace('bg-blue-600', 'bg-red-600');
-                orb.classList.add('active-pulse');
+                orb.classList.add('listening-pulse');
             };
 
             recognition.onresult = async (event) => {
                 const transcript = event.results[0][0].transcript;
-                statusText.innerText = "Berpikir...";
-                subText.innerText = `"${transcript}"`;
-                await processWithGemini(transcript);
+                statusText.innerText = "Membuat Rute...";
+                await getRealNav(transcript);
             };
 
-            recognition.onerror = () => {
-                speak("Maaf, suara tidak terdengar. Silakan ketuk kembali.");
-                resetUI();
+            recognition.onend = () => {
+                orb.classList.replace('bg-red-600', 'bg-blue-600');
+                orb.classList.remove('listening-pulse');
+                loader.classList.add('hidden');
             };
-
-            recognition.onend = () => resetUI();
-        }
-
-        function resetUI() {
-            orb.classList.replace('bg-red-600', 'bg-blue-600');
-            orb.classList.remove('active-pulse');
-            loader.classList.add('hidden');
         }
 
         function handleScreenTap(event) {
@@ -138,58 +104,39 @@
             document.body.appendChild(ripple);
             setTimeout(() => ripple.remove(), 600);
 
-            if (recognition) {
-                try { 
-                    recognition.start(); 
-                    const audio = new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3');
-                    audio.play().catch(() => {});
-                } catch(e) {}
-            }
+            if (recognition) recognition.start();
         }
 
-        async function processWithGemini(query, retry = 0) {
-            const key = apiKeyInput.value.trim();
-            if (!key) {
-                speak("Mohon masukkan API Key Anda terlebih dahulu di kotak bawah.");
-                return;
-            }
-
+        async function getRealNav(destination) {
             loader.classList.remove('hidden');
             
-            // MENGGUNAKAN MODEL STABIL: gemini-1.5-flash
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
             
-            const prompt = `Anda adalah asisten navigasi suara tunanetra. User ingin ke: "${query}". 
-            Berikan instruksi langkah-demi-langkah singkat (max 3 langkah) tentang arah jalan (lurus, belok kiri, belok kanan). 
-            Gunakan bahasa yang sangat jelas untuk didengar suara.`;
+            // PROMPT YANG LEBIH AMAN: Menyertakan koordinat GPS asli
+            const prompt = `Anda adalah asisten navigasi tunanetra presisi. 
+            Lokasi pengguna saat ini (Latitude, Longitude): ${userCoords ? userCoords.lat + ',' + userCoords.lon : 'Tidak diketahui'}.
+            Tujuan: "${destination}".
+            
+            Tugas: 
+            1. Jika koordinat ada, gunakan pengetahuan peta Anda untuk memberikan arah yang sangat akurat.
+            2. Berikan instruksi "Belok Kiri", "Belok Kanan", atau "Lurus" berdasarkan arah jalan yang benar.
+            3. Jika tujuan terlalu jauh, sarankan transportasi umum.
+            4. Selalu ingatkan: "Gunakan topi sensor Anda untuk mendeteksi benda di depan Anda."
+            
+            Gunakan maksimal 4 kalimat.`;
 
             try {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
-                    })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
-
                 const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error.message);
-                }
-
-                const answer = data.candidates[0].content.parts[0].text;
-                statusText.innerText = "Navigasi Siap";
-                speak(answer);
-
-            } catch (err) {
-                if (retry < 3) {
-                    setTimeout(() => processWithGemini(query, retry + 1), 2000);
-                } else {
-                    console.error(err);
-                    speak("Maaf, terjadi masalah koneksi atau API Key salah. Periksa kembali kuncinya.");
-                    statusText.innerText = "Terjadi Kesalahan";
-                }
+                const aiText = data.candidates[0].content.parts[0].text;
+                statusText.innerText = "Rute Siap";
+                speak(aiText);
+            } catch (e) {
+                speak("Gagal membuat rute. Coba lagi.");
             } finally {
                 loader.classList.add('hidden');
             }
